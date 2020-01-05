@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
   if (argc > 1) {
     filename = argv[1];
   } else {
-    filename = "TNDTEST.VGZ";
+    filename = "TLPTTEST.VGZ";
   }
   f = gzopen(filename, "rb");
   if (!f) {

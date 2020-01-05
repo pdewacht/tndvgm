@@ -23,4 +23,4 @@ $CC $ZDEFS zlib/adler32.c
 $CC $ZDEFS zlib/crc32.c
 $CC $ZDEFS zlib/zutil.c
 
-wlink name tndtest system dos file main,psg,timer,vgm,gzlib,gzread,inflate,inffast,inftrees,zutil,adler32,crc32 option quiet,map
+wlink name tlpttest system dos file main,psg,timer,vgm,gzlib,gzread,inflate,inffast,inftrees,zutil,adler32,crc32 option quiet,map
