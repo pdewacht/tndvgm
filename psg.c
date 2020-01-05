@@ -42,13 +42,8 @@ void psg_native_output(unsigned char x) {
 #define PP_STATUS_NOT_BUSY    (0x80U)
 
 
-static short get_lpt_port(int i) {
-  return *(short __far *)MK_FP(0x40, 6 + 2*i);
-}
-
-
-void psg_lpta_setup(int lpt) {
-  psg_port = get_lpt_port(lpt);
+void psg_lpta_setup(int lpt_port) {
+  psg_port = lpt_port;
   psg_output = psg_lpta_output;
   psg_reset();
 }
@@ -81,8 +76,10 @@ void psg_lpta_output(unsigned char x) {
 }
 
 
-void psg_lptb_setup(int lpt) {
-  psg_port = get_lpt_port(lpt);
+#if 0
+
+void psg_lptb_setup(int lpt_port) {
+  psg_port = lpt_port;
   psg_output = psg_lptb_output;
   psg_reset();
 }
@@ -114,3 +111,4 @@ void psg_lptb_output(unsigned char x) {
   outp(lpt_ctrl, PP_CTRL_NOT_SELECT);
 }
 
+#endif

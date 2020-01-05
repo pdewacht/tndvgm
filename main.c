@@ -1,8 +1,7 @@
 #include <conio.h>
 #include <dos.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
 #include "zlib/zlib.h"
 #include "psg.h"
 #include "vgm.h"
@@ -19,50 +18,94 @@ static void __interrupt __far ctrlc_handler() {
 }
 
 
-static void usage() {
-  fprintf(stderr, "Usage: TNDVGM [TANDY|LPTA|LPTB] vgm-file\n");
+static short get_lpt_port(int i) {
+  return *(short __far *)MK_FP(0x40, 6 + 2*i);
+}
+
+
+static short setup(void) {
+  char num_ports, port, i;
+
+  num_ports = 0;
+  for (i = 1; i < 4; i++) {
+    if (get_lpt_port(i)) {
+      num_ports++;
+      port = i;
+    }
+  }
+
+  if (num_ports == 0) {
+    cputs("Sorry, no printer port found...\r\n");
+    exit(1);
+  }
+
+  if (num_ports == 1) {
+    cprintf("Found one printer port: LPT%d\r\n", port);
+    return get_lpt_port(port);
+  }
+
+  cputs("Found multiple printer ports:");
+  for (i = 1; i < 4; i++) {
+    if (get_lpt_port(i)) {
+      cprintf(" LPT%d", i);
+    }
+  }
+  cputs("\r\nWhich one is the TNDLPT connected to? [");
+  for (i = 1; i < 4; i++) {
+    if (get_lpt_port(i)) {
+      cprintf("%d", i);
+    }
+  }
+  cputs("]? ");
+  do {
+    port = getch() - '0';
+  } while (port < 1 || port > 3 || !get_lpt_port(port));
+  cprintf("LPT%d\r\n", port);
+  return get_lpt_port(port);
+}
+
+
+void warnx(const char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  vcprintf(fmt, ap);
+  cprintf("\r\n");
+  va_end(ap);
 }
 
 
 int main(int argc, char *argv[]) {
   gzFile f;
+  char *filename;
+  short lpt_base;
 
-  printf("== TNDVGM " XSTR(VERSION) " ==\n\n");
-  if (argc != 3) {
-    usage();
-    return 1;
-  }
+  cputs("== TNDLPT test program (" XSTR(VERSION) ") ==\r\n\r\n");
 
-  if (strcasecmp(argv[1], "TANDY") == 0) {
-    psg_native_setup();
+  if (argc > 1) {
+    filename = argv[1];
+  } else {
+    filename = "TNDTEST.VGZ";
   }
-  else if (strcasecmp(argv[1], "LPTA") == 0) {
-    psg_lpta_setup(1);
-  }
-  else if (strcasecmp(argv[1], "LPTB") == 0) {
-    psg_lptb_setup(1);
-  }
-  else {
-    usage();
-    return 1;
-  }
-
-  f = gzopen(argv[2], "rb");
+  f = gzopen(filename, "rb");
   if (!f) {
-    fprintf(stderr, "Can't open file\n");
+    cprintf("Can't open file \"%s\"\r\n", filename);
+    return 1;
+  }
+  if (!music_setup(f)) {
+    cputs("Not a Tandy VGM file\r\n");
     return 1;
   }
 
-  while (kbhit()) {
+  psg_lpta_setup(setup());
+
+  cputs("\r\nPress any key to start the music...");
+  do {
     getch();
-  }
+  } while (kbhit());
+  cputs("\r\n\r\nPress any key to stop...");
   _dos_setvect(0x23, ctrlc_handler);
 
-  if (!music_setup(f)) {
-    fprintf(stderr, "Not a Tandy VGM file\n");
-    return 1;
-  }
-  printf("Press any key to stop\n");
+  music_start();
   while (!interrupted && music_loop() && !kbhit()) {
   }
   music_shutdown();
@@ -71,5 +114,6 @@ int main(int argc, char *argv[]) {
   while (kbhit()) {
     getch();
   }
+  cputs("\r\n\r\n");
   return 0;
 }

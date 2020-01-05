@@ -7,6 +7,8 @@
 #include "psg.h"
 #include "vgm.h"
 
+extern void warnx(const char *fmt, ...);
+
 
 #define TIMER_HZ 300
 #define VGM_TICKS_PER_TIMER_TICK (44100 / TIMER_HZ)
@@ -139,7 +141,7 @@ static void warn_unimplemented() {
   unsigned char cmd = *vgm.p;
   if (!vgm.warning_flag[cmd]) {
     vgm.warning_flag[cmd] = 1;
-    fprintf(stderr, "Warning: skipping unimplemented command %02Xh\n", cmd);
+    warnx("Warning: skipping unimplemented command %02Xh", cmd);
   }
 }
 
@@ -161,11 +163,11 @@ static bool refill() {
 
   result = gzread(vgm.f, dest, to_read);
   if (result < 0) {
-    fprintf(stderr, "Read error\n");
+    warnx("Read error");
     return false;
   }
   if (result == 0) {
-    fprintf(stderr, "Unexpected end of file\n");
+    warnx("Unexpected end of file");
     return false;
   }
 
@@ -207,7 +209,9 @@ bool music_setup(gzFile f) {
   if (!psg_hz) {
     return false;
   }
-  printf("[PSG frequency %luHz]\n", psg_hz);
+  if (psg_hz != 3579545) {
+    warnx("Warning: Unexpected PSG frequency %luHz", psg_hz);
+  }
 
   /* OK */
   memset(&vgm, 0, sizeof(vgm));
@@ -220,10 +224,12 @@ bool music_setup(gzFile f) {
     return false;
   }
 
-  timer_setup(TIMER_HZ);
   return true;
 }
 
+void music_start() {
+  timer_setup(TIMER_HZ);
+}
 
 void music_shutdown() {
   timer_shutdown();
@@ -248,7 +254,7 @@ bool music_loop() {
   %%write exec;
 
   if (vgm.cs == vgm_error) {
-    fprintf(stderr, "VGM format error, cmd=%02Xh\n", *vgm.p);
+    warnx("VGM format error, cmd=%02Xh", *vgm.p);
     return false;
   }
   if (vgm.p == vgm.pe) {

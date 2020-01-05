@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-VERSION=20181112
+VERSION=20200105
 
 CC='wcc -bt=dos -zq -oxhs -mc'
 ZDEFS="-dNO_GZCOMPRESS"
@@ -23,4 +23,4 @@ $CC $ZDEFS zlib/adler32.c
 $CC $ZDEFS zlib/crc32.c
 $CC $ZDEFS zlib/zutil.c
 
-wlink name tndvgm system dos file main,psg,timer,vgm,gzlib,gzread,inflate,inffast,inftrees,zutil,adler32,crc32 option quiet
+wlink name tndtest system dos file main,psg,timer,vgm,gzlib,gzread,inflate,inffast,inftrees,zutil,adler32,crc32 option quiet,map
